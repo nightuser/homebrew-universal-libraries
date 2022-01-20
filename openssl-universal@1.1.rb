@@ -20,7 +20,10 @@ class OpensslUniversalAT11 < Formula
 
   depends_on "ca-certificates"
 
-  patch :DATA
+  patch do
+    url "https://raw.githubusercontent.com/nightuser/homebrew-universal-libraries/main/patches/openssl-universal%401.1/use_target.patch"
+    sha256 "6ffb45e661595686dac1cb3b58e7f95ea7843078d2e2a0e7be0715f25d2d880f"
+  end
 
   # SSLv2 died with 1.1.0, so no-ssl2 no longer required.
   # SSLv3 & zlib are off by default with 1.1.0 but this may not
@@ -104,27 +107,3 @@ class OpensslUniversalAT11 < Formula
     end
   end
 end
-
-__END__
-
-diff -urU0 a/Configurations/10-main.conf b/Configurations/10-main.conf
---- a/Configurations/10-main.conf	2021-12-14 15:45:01.000000000 +0000
-+++ b/Configurations/10-main.conf	2022-01-20 18:14:09.000000000 +0000
-@@ -1560,7 +1560,7 @@
-     "darwin64-x86_64-cc" => {
-         inherit_from     => [ "darwin-common", asm("x86_64_asm") ],
-         CFLAGS           => add("-Wall"),
--        cflags           => add("-arch x86_64"),
-+        cflags           => add("-target x86_64-apple-macos10.12"),
-         lib_cppflags     => add("-DL_ENDIAN"),
-         bn_ops           => "SIXTY_FOUR_BIT_LONG",
-         perlasm_scheme   => "macosx",
-@@ -1568,7 +1568,7 @@
-     "darwin64-arm64-cc" => {
-         inherit_from     => [ "darwin-common", asm("aarch64_asm") ],
-         CFLAGS           => add("-Wall"),
--        cflags           => add("-arch arm64"),
-+        cflags           => add("-target arm64-apple-macos11"),
-         lib_cppflags     => add("-DL_ENDIAN"),
-         bn_ops           => "SIXTY_FOUR_BIT_LONG",
-         perlasm_scheme   => "ios64",
