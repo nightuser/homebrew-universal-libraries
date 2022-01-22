@@ -21,7 +21,7 @@ class OpensslUniversalAT11 < Formula
   depends_on "ca-certificates"
 
   patch do
-    url "https://raw.githubusercontent.com/nightuser/homebrew-universal-libraries/main/patches/openssl-universal%401.1/use_target.patch"
+    url "https://raw.githubusercontent.com/nightuser/homebrew-universal-libraries/d38d94f994719354d62d0b3e3c43e3950f0c4478/patches/openssl-universal%401.1/use_target.patch"
     sha256 "6ffb45e661595686dac1cb3b58e7f95ea7843078d2e2a0e7be0715f25d2d880f"
   end
 
@@ -52,7 +52,7 @@ class OpensslUniversalAT11 < Formula
     current_arch = Hardware::CPU.arch
     other_arch = current_arch == "x86_64" ? "arm64" : "x86_64"
 
-    for arch in [current_arch, other_arch] do
+    [current_arch, other_arch].each do |arch|
       build_dir = "build_#{arch}"
       mkdir_p build_dir
       chdir build_dir do
@@ -64,7 +64,7 @@ class OpensslUniversalAT11 < Formula
     chdir "build_#{current_arch}" do
       libfiles = File.join("**", "*.{dylib,a}")
       Dir.glob(libfiles) do |lib|
-        system "lipo", "-create", "-output", lib, "../build_#{other_arch}/#{lib}", lib
+        system "lipo", "-create", "-output", lib, "../build_#{other_arch}/#{lib}", lib # rubocop:disable FormulaAudit/Miscellaneous
       end
 
       system "make", "install", "MANDIR=#{man}", "MANSUFFIX=ssl"
