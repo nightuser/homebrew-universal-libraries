@@ -21,7 +21,7 @@ class OpensslUniversalAT11 < Formula
   depends_on "ca-certificates"
 
   patch do
-    url "https://raw.githubusercontent.com/nightuser/homebrew-universal-libraries/d38d94f994719354d62d0b3e3c43e3950f0c4478/patches/openssl-universal%401.1/use_target.patch"
+    url "https://raw.githubusercontent.com/nightuser/homebrew-universal-libraries/main/patches/openssl-universal%401.1/use_target.patch"
     sha256 "6ffb45e661595686dac1cb3b58e7f95ea7843078d2e2a0e7be0715f25d2d880f"
   end
 
@@ -40,45 +40,6 @@ class OpensslUniversalAT11 < Formula
     ]
   end
 
-  def extract_static_lib(lib, suffix = "")
-    name = File.basename(lib)
-    outdir = "#{name}_files#{suffix}"
-    mkdir_p outdir
-    objs = nil
-    chdir outdir do
-      system "ar", "-x", "../#{lib}"
-      objs = Dir["*.o"]
-    end
-    [outdir, objs]
-  end
-
-  def merge_machos_static(lib1, lib2, out)
-    lib1_dir, lib1_objs = extract_static_lib(lib1, "_a")
-    lib2_dir, lib2_objs = extract_static_lib(lib2, "_b")
-
-    outdir = "#{out}_files"
-    mkdir_p outdir
-
-    (lib1_objs - lib2_objs).each do |obj|
-      cp "#{lib1_dir}/#{obj}", outdir
-    end
-    (lib2_objs - lib1_objs).each do |obj|
-      cp "#{lib2_dir}/#{obj}", outdir
-    end
-    (lib1_objs & lib2_objs).each do |obj|
-      MachO::Tools.merge_machos("#{outdir}/#{obj}",
-                                "#{lib1_dir}/#{obj}",
-                                "#{lib2_dir}/#{obj}")
-    end
-    system "ls", outdir
-    objs = Dir["#{outdir}/*.o"]
-    system "ar", "-r", "-c", out, *objs
-
-    rm_rf outdir
-    rm_rf lib1_dir
-    rm_rf lib2_dir
-  end
-
   def install
     # This could interfere with how we expect OpenSSL to build.
     ENV.delete("OPENSSL_LOCAL_CONFIG_DIR")
@@ -91,7 +52,7 @@ class OpensslUniversalAT11 < Formula
     current_arch = Hardware::CPU.arch
     other_arch = current_arch == "x86_64" ? "arm64" : "x86_64"
 
-    [current_arch, other_arch].each do |arch|
+    for arch in [current_arch, other_arch] do
       build_dir = "build_#{arch}"
       mkdir_p build_dir
       chdir build_dir do
@@ -101,12 +62,9 @@ class OpensslUniversalAT11 < Formula
     end
 
     chdir "build_#{current_arch}" do
-      Dir.glob("**/.*.dylib") do |lib|
-        MachO::Tools.merge_machos(lib, "../build_#{other_arch}/#{lib}", lib)
-      end
-
-      Dir.glob("**/*.a") do |lib|
-        merge_machos_static(lib, "../build_#{other_arch}/#{lib}", lib)
+      libfiles = File.join("**", "*.{dylib,a}")
+      Dir.glob(libfiles) do |lib|
+        system "lipo", "-create", "-output", lib, "../build_#{other_arch}/#{lib}", lib
       end
 
       system "make", "install", "MANDIR=#{man}", "MANSUFFIX=ssl"
