@@ -50,7 +50,7 @@ class OpensslUniversalAT11 < Formula
     ENV["PERL"] = Formula["perl"].opt_bin/"perl" if which("perl") == Formula["perl"].opt_bin/"perl"
 
     current_arch = Hardware::CPU.arch
-    other_arch = current_arch == "x86_64" ? "arm64" : "x86_64"
+    other_arch = current_arch == :x86_64 ? "arm64" : "x86_64"
 
     [current_arch, other_arch].each do |arch|
       build_dir = "build_#{arch}"
